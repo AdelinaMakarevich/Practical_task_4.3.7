@@ -1,16 +1,15 @@
 let formValue = document.getElementById("formData");
 let cooldown = true;
-function runScript(e) {
-  if (e.keyCode == 13) {
-    debounce();
-    return false;
-  }
-}
+const input = document.querySelector("input");
+const log = document.getElementById("values");
+let url;
+
+formValue.addEventListener("input", debounce);
 function debounce() {
-  let url = `https://api.github.com/search/repositories?q=${formValue.value}&per_page=5`;
+  url = `https://api.github.com/search/repositories?q=${formValue.value}&per_page=5`;
   if (cooldown == true) {
     cooldown = false;
-    setTimeout(() => (cooldown = true), 500);
+    setTimeout(() => (cooldown = true), 400);
     if (formValue.value != 0 && formValue.value != /^\s+$/) {
       fetchData(url);
     } else {
@@ -23,16 +22,18 @@ function fetchData(url) {
   fetch(url, {
     method: "GET",
     headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      "Content-Type": "text/plain;charset=UTF-8",
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28"
     },
   })
     .then((response) => response.json())
     .then((data) => {
       let result = data.items;
+      if (typeof result == 'undefined') {
+        throw new URIError ('Лимит запросов исчерпан')
+      }
       if (result.length == 0) {
-        throw new Error('Репозитория с таким именем не существует')
+        throw new ReferenceError ('Репозитория с таким именем не существует')
       }
       let outcome = document.getElementById("searchResult");
       outcome.innerHTML = "";
@@ -85,9 +86,15 @@ function fetchData(url) {
       formValue.value = "";
       let showError = document.getElementById("searchResult");
       showError.innerHTML = "";
+      if (err.name == 'ReferenceError' || err.name == 'URIError') {
       showError.insertAdjacentHTML(
         "beforeend",
         `<p>${err.message}</p>`
-      );
+      )
+      }
+      else {
+        throw err;
+      }
+    
     });
 }
